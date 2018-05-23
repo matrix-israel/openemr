@@ -14,6 +14,7 @@
  * @package OpenEMR
  * @author  Sharon Cohen <sharonco@matrix.co.il>
  * @author  Amiel Elboim <amielel@matrix.co.il>
+ * @author  Eyal Wolanowski <eyalvo@matrix.co.il>
  * @link    http://www.open-emr.org
  */
 
@@ -25,12 +26,60 @@ validate.extend(validate.validators.datetime, {
     // The value is guaranteed not to be null or undefined but otherwise it
     // could be anything.
     parse: function(value, options) {
-        return +moment.utc(value);
+        var format = '';
+        if(typeof options.format !== 'undefined') {
+            format =options.format;
+        }
+        else {
+            if (typeof g_date_format !== 'undefined') {
+                switch(g_date_format) {
+                    case "0":
+                        format = 'YYYY-MM-DD';
+                        break;
+                    case "1":
+                        format = 'MM/DD/YYYY';
+                        break;
+                    case "2":
+                        format = 'DD/MM/YYYY';
+                        break;
+                    default:
+                        format = 'YYYY-MM-DD';
+                }
+            }
+            else{format = 'YYYY-MM-DD';} //default
+        }
+        return (moment.utc(value, format));
     },
     // Input is a unix timestamp
     format: function(value, options) {
-        var format = options.dateOnly ? "YYYY-MM-DD" : "YYYY-MM-DD hh:mm:ss";
-        return moment.utc(value).format(format);
+        var format = '';
+        if (options.dateOnly){
+            if(typeof options.format !== 'undefined') {
+                format =options.format;
+            }
+            else {
+                if (typeof g_date_format !== 'undefined') {
+                    switch(g_date_format) {
+                        case "0":
+                            format = 'YYYY-MM-DD';
+                            break;
+                        case "1":
+                            format = 'MM/DD/YYYY';
+                            break;
+                        case "2":
+                            format = 'DD/MM/YYYY';
+                            break;
+                        default:
+                            format = 'YYYY-MM-DD';
+                    }
+                }
+                else{format = 'YYYY-MM-DD';} //default
+            }
+        }else{
+            format="YYYY-MM-DD hh:mm:ss";
+        }
+
+        return (moment.utc(value, format));
     }
 });
 
@@ -62,9 +111,27 @@ validate.validators.pastDate = function(value, options) {
 
             return throwError('Must be year format');
         }
+        else return; // passed only year validation
     }
 
-    var date =  new Date(value);
+    var format=0;
+    if (typeof(g_date_format) !== 'undefined') {
+        format=g_date_format;
+    }
+
+    var date = '';
+
+        switch(format) {
+            // case date format is dd/mm/YYYY
+            case "2":
+                var dateParts = value.split("/");
+                var date = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+                break;
+            default:
+                date =  new Date(value);
+        }
+
+
     var mls_date = date.getTime();
     if(isNaN(mls_date)) {
        return throwError('Must be valid date');

@@ -1,28 +1,17 @@
 <?php
-use ESign\Api;
-
 /**
- *
  * Patient custom report.
  *
- * LICENSE: This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 3
- * of the License, or (at your option) any later version.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://opensource.org/licenses/gpl-license.php>;.
- *
- * @package OpenEMR
- * @author  Brady Miller <brady.g.miller@gmail.com>
- * @author  Ken Chapple <ken@mi-squared.com>
- * @author  Tony McCormick <tony@mi-squared.com>
- * @author  Jerry Padgett <sjpadgett@gmail.com>
- * @link    http://www.open-emr.org
+ * @package   OpenEMR
+ * @link      http://www.open-emr.org
+ * @author    Brady Miller <brady.g.miller@gmail.com>
+ * @author    Ken Chapple <ken@mi-squared.com>
+ * @author    Tony McCormick <tony@mi-squared.com>
+ * @author    Jerry Padgett <sjpadgett@gmail.com>
+ * @copyright Copyright (c) 2018 Brady Miller <brady.g.miller@gmail.com>
+ * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
+
 
 require_once("../../globals.php");
 require_once("$srcdir/forms.inc");
@@ -41,6 +30,7 @@ if ($GLOBALS['gbl_portal_cms_enable']) {
 }
 require_once("$srcdir/appointments.inc.php");
 
+use ESign\Api;
 use OpenEMR\Services\FacilityService;
 
 $facilityService = new FacilityService();
@@ -357,7 +347,7 @@ foreach ($ar as $key => $val) {
             $recurrences = fetchRecurrences($pid);
 
             //print the recurring days to screen
-            if ($recurrences[0] == false) { //if there are no recurrent appointments:
+            if (empty($recurrences)) { //if there are no recurrent appointments:
                 echo "<div class='text' >";
                 echo "<span>" . xlt('None') . "</span>";
                 echo "</div>";
@@ -365,7 +355,7 @@ foreach ($ar as $key => $val) {
             } else {
                 foreach ($recurrences as $row) {
                     //checks if there are recurrences and if they are current (git didn't end yet)
-                    if ($row == false || !recurrence_is_current($row['pc_endDate'])) {
+                    if (!recurrence_is_current($row['pc_endDate'])) {
                         continue;
                     }
 
@@ -429,7 +419,7 @@ foreach ($ar as $key => $val) {
             echo "<hr />";
             echo "<div class='text billing'>";
             print "<h1>".xl('Billing Information').":</h1>";
-            if (count($ar['newpatient']) > 0) {
+            if (!empty($ar['newpatient']) && count($ar['newpatient']) > 0) {
                 $billings = array();
                 echo "<table>";
                 echo "<tr><td width='400' class='bold'>Code</td><td class='bold'>".xl('Fee')."</td></tr>\n";
@@ -617,8 +607,8 @@ foreach ($ar as $key => $val) {
                     '/documents/' . $from_pathname . '/' . $from_filename;
                     $to_file = substr($from_file, 0, strrpos($from_file, '.')) . '_converted.jpg';
                 }
-
-                if ($extension != ".pdf") {
+                // adding support for .txt MDM-TXA interface/orders/receive_hl7_results.inc.php
+                if ($extension != (".pdf" || ".txt")) {
                     $image_data = getimagesize($from_file);
                     $extension = image_type_to_extension($image_data[2]);
                 }
@@ -665,6 +655,10 @@ foreach ($ar as $key => $val) {
                         ob_start();
 
                         echo "<div><div class='text documents'>\n";
+                    } elseif ($extension == ".txt") {
+                        echo "<pre>";
+                        readfile($from_file);
+                        echo "</pre>";
                     } else {
                         if (! is_file($to_file)) {
                             exec("convert -density 200 \"$from_file\" -append -resize 850 \"$to_file\"");

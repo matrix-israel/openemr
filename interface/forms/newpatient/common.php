@@ -129,7 +129,7 @@ require_once($GLOBALS['srcdir'] . "/validation/validation_script.js.php"); ?>
    $('.datepicker').datetimepicker({
         <?php $datetimepicker_timepicker = false; ?>
         <?php $datetimepicker_showseconds = false; ?>
-        <?php $datetimepicker_formatInput = false; ?>
+        <?php $datetimepicker_formatInput = true; ?>
         <?php require($GLOBALS['srcdir'] . '/js/xl/jquery-datetimepicker-2-5-4.js.php'); ?>
         <?php // can add any additional javascript settings to datetimepicker here; need to prepend first setting with a comma ?>
    });
@@ -228,7 +228,7 @@ ajax_bill_loc(pid,dte,facility);
             //Bring only patient ang group categories
             $visitSQL = "SELECT pc_catid, pc_catname, pc_cattype 
                        FROM openemr_postcalendar_categories
-                       WHERE pc_active = 1  and pc_cattype IN (0,3) ORDER BY pc_seq";
+                       WHERE pc_active = 1 and pc_cattype IN (0,3) and pc_constant_id  != 'no_show' ORDER BY pc_seq";
 
             $visitResult = sqlStatement($visitSQL);
             $therapyGroupCategories = [];
@@ -411,8 +411,8 @@ echo ">" . xlt('None'). "</option>\n";
      <td class='bold' nowrap><?php echo xlt('Date of Service:'); ?></td>
      <td class='text' nowrap>
       <input type='text' size='10' class='datepicker input-sm' name='form_date' id='form_date' <?php echo $disabled ?>
-       value='<?php echo $viewmode ? substr($result['date'], 0, 10) : date('Y-m-d'); ?>'
-       title='<?php echo xla('yyyy-mm-dd Date of service'); ?>' />
+       value='<?php echo $viewmode ? attr(oeFormatShortDate(substr($result['date'], 0, 10))) : oeFormatShortDate(date('Y-m-d')); ?>'
+       title='<?php echo xla('Date of service'); ?>' />
      </td>
     </tr>
 
@@ -422,8 +422,8 @@ echo ">" . xlt('None'). "</option>\n";
      <td class='bold' nowrap><?php echo xlt('Onset/hosp. date:'); ?></td>
      <td class='text' nowrap><!-- default is blank so that while generating claim the date is blank. -->
       <input type='text' size='10' class='datepicker input-sm' name='form_onset_date' id='form_onset_date'
-       value='<?php echo $viewmode && $result['onset_date']!='0000-00-00 00:00:00' ? substr($result['onset_date'], 0, 10) : ''; ?>'
-       title='<?php echo xla('yyyy-mm-dd Date of onset or hospitalization'); ?>' />
+       value='<?php echo $viewmode && $result['onset_date']!='0000-00-00 00:00:00' ? attr(oeFormatShortDate(substr($result['onset_date'], 0, 10))) : ''; ?>'
+       title='<?php echo xla('Date of onset or hospitalization'); ?>' />
      </td>
     </tr>
     <tr>

@@ -5,6 +5,7 @@
 // of the License, or (at your option) any later version.
 
 require_once(dirname(__FILE__) . "/../library/forms.inc");
+require_once(dirname(__FILE__) . "/../library/crypto.php");
 
 use OpenEMR\Services\FacilityService;
 use OpenEMR\Services\PatientService;
@@ -129,19 +130,55 @@ class C_Document extends Controller
 
             foreach ($_FILES['file']['name'] as $key => $value) {
                 $fname = $value;
-                $err = "";
+                $error = "";
                 if ($_FILES['file']['error'][$key] > 0 || empty($fname) || $_FILES['file']['size'][$key] == 0) {
                     $fname = $value;
                     if (empty($fname)) {
                         $fname = htmlentities("<empty>");
                     }
-                    $error = xl("Error number") .": " . $_FILES['file']['error'][$key] . " " . xl("occurred while uploading file named") . ": " . $fname . "\n";
+                    $error = xl("Error number") . ": " . $_FILES['file']['error'][$key] . " " . xl("occurred while uploading file named") . ": " . $fname . "\n";
                     if ($_FILES['file']['size'][$key] == 0) {
                         $error .= xl("The system does not permit uploading files of with size 0.") . "\n";
                     }
                 } elseif ($GLOBALS['secure_upload'] && !isWhiteFile($_FILES['file']['tmp_name'][$key])) {
-                       $error = xl("The system does not permit uploading files with MIME content type") . " - " . mime_content_type($_FILES['file']['tmp_name'][$key]) . ".\n";
+                    $error = xl("The system does not permit uploading files with MIME content type") . " - " . mime_content_type($_FILES['file']['tmp_name'][$key]) . ".\n";
                 } else {
+                    // Test for a zip of DICOM images
+                    if (stripos($_FILES['file']['type'][$key], 'zip') !== false) {
+                        $za = new ZipArchive();
+                        $handler = $za->open($_FILES['file']['tmp_name'][$key]);
+                        if ($handler) {
+                            $mimetype = "application/dicom+zip";
+                            for ($i = 0; $i < $za->numFiles; $i++) {
+                                $stat = $za->statIndex($i);
+                                $fp = $za->getStream($stat['name']);
+                                if ($fp) {
+                                    $head = fread($fp, 256);
+                                    fclose($fp);
+                                    if (strpos($head, 'DICM') === false) { // Fixed at offset 128. even one non DICOM makes zip invalid.
+                                        $mimetype = "application/zip";
+                                        break;
+                                    }
+                                    unset($head);
+                                    // if here -then a DICOM
+                                    $parts = pathinfo($stat['name']);
+                                    if (strtolower($parts['extension']) != "dcm") { // require extension for viewer
+                                        $new_name = $stat['name'] . ".dcm";
+                                        $za->renameIndex($i, $new_name); // only use index rename!
+                                    }
+                                } else { // Rarely here
+                                    $mimetype = "application/zip";
+                                    break;
+                                }
+                            }
+                            $za->close();
+                            if ($mimetype == "application/dicom+zip") {
+                                $_FILES['file']['type'][$key] = $mimetype;
+                                sleep(1); // Timing insurance in case of re-compression. Only acted on index so...!
+                                $_FILES['file']['size'][$key] = filesize($_FILES['file']['tmp_name'][$key]); // file may have grown.
+                            }
+                        }
+                    }
                     $tmpfile = fopen($_FILES['file']['tmp_name'][$key], "r");
                     $filetext = fread($tmpfile, $_FILES['file']['size'][$key]);
                     fclose($tmpfile);
@@ -151,12 +188,21 @@ class C_Document extends Controller
                     if ($_POST['destination'] != '') {
                         $fname = $_POST['destination'];
                     }
+                    // set mime, test for single DICOM and assign extension if missing.
+                    $mimetype = $_FILES['file']['type'][$key];
+                    if (strpos($filetext, 'DICM') !== false) {
+                        $mimetype = 'application/dicom';
+                        $parts = pathinfo($fname);
+                        if (!$parts['extension']) {
+                            $fname .= '.dcm';
+                        }
+                    }
                     $d = new Document();
                     $rc = $d->createDocument(
                         $patient_id,
                         $category_id,
                         $fname,
-                        $_FILES['file']['type'][$key],
+                        $mimetype,
                         $filetext,
                         empty($_GET['higher_level_path']) ? '' : $_GET['higher_level_path'],
                         empty($_POST['path_depth']) ? 1 : $_POST['path_depth'],
@@ -264,11 +310,10 @@ class C_Document extends Controller
             if (!file_exists($temp_url)) {
                 echo xl('The requested document is not present at the expected location on the filesystem or there are not sufficient permissions to access it.', '', '', ' ') . $temp_url;
             }
-                        $url = $temp_url;
-            $body_notes = attr($_POST['note']);
+            $url = $temp_url;
             $pdetails = getPatientData($patient_id);
             $pname = $pdetails['fname']." ".$pdetails['lname'];
-            $this->document_send($_POST['provide_email'], $body_notes, $url, $pname);
+            $this->document_send($_POST['provide_email'], $_POST['note'], $url, $pname);
             if ($couch_docid && $couch_revid) {
       // remove the temporary couchdb file
                 unlink($temp_couchdb_url);
@@ -306,7 +351,7 @@ class C_Document extends Controller
 
         // Added by Rod to support document delete:
         $delete_string = '';
-        if (acl_check('admin', 'super')) {
+        if (acl_check('patients', 'docs_rm')) {
             $delete_string = "<a href='' class='css_button' onclick='return deleteme(" . $d->get_id() .
                 ")'><span><font color='red'>" . xl('Delete') . "</font></span></a>";
         }
@@ -408,28 +453,14 @@ class C_Document extends Controller
         return $this->list_action($patient_id);
     }
 
-    function encrypt($plaintext, $key, $cypher = 'tripledes', $mode = 'cfb')
+    function encrypt($plaintext, $key)
     {
-        $td = mcrypt_module_open($cypher, '', $mode, '');
-        $iv = mcrypt_create_iv(mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
-        mcrypt_generic_init($td, $key, $iv);
-        $crypttext = mcrypt_generic($td, $plaintext);
-        mcrypt_generic_deinit($td);
-        return $iv.$crypttext;
+        return aes256Encrypt($plaintext, $key, false);
     }
 
-    function decrypt($crypttext, $key, $cypher = 'tripledes', $mode = 'cfb')
+    function decrypt($crypttext, $key)
     {
-        $plaintext = '';
-        $td = mcrypt_module_open($cypher, '', $mode, '');
-        $ivsize = mcrypt_enc_get_iv_size($td) ;
-        $iv = substr($crypttext, 0, $ivsize);
-        $crypttext = substr($crypttext, $ivsize);
-        if ($iv) {
-            mcrypt_generic_init($td, $key, $iv);
-            $plaintext = mdecrypt_generic($td, $crypttext);
-        }
-        return $plaintext;
+        return aes256Decrypt($crypttext, $key, false);
     }
 
     /**
@@ -523,7 +554,7 @@ class C_Document extends Controller
                 $filetext = fread($f, filesize($tmpcouchpath));
                     $ciphertext = $this->encrypt($filetext, $passphrase);
                     $tmpfilepath = $GLOBALS['temporary_files_dir'];
-                    $tmpfilename = "/encrypted_".$d->get_url_file();
+                    $tmpfilename = "/encrypted_aes_".$d->get_url_file();
                     $tmpfile = fopen($tmpfilepath.$tmpfilename, "w+");
                 fwrite($tmpfile, $ciphertext);
                 fclose($tmpfile);
@@ -604,7 +635,7 @@ class C_Document extends Controller
                             $filetext = fread($f, filesize($url));
                     $ciphertext = $this->encrypt($filetext, $passphrase);
                     $tmpfilepath = $GLOBALS['temporary_files_dir'];
-                    $tmpfilename = "/encrypted_".$d->get_url_file();
+                    $tmpfilename = "/encrypted_aes_".$d->get_url_file();
                     $tmpfile = fopen($tmpfilepath.$tmpfilename, "w+");
                         fwrite($tmpfile, $ciphertext);
                         fclose($tmpfile);
@@ -1203,7 +1234,7 @@ class C_Document extends Controller
             return;
         }
 
-          $desc = "Please check the attached patient document.\n Content:".attr($body);
+          $desc = "Please check the attached patient document.\n Content:".$body;
           $mail = new MyMailer();
           $from_name = $GLOBALS["practice_return_email_path"];
           $from =  $GLOBALS["practice_return_email_path"];

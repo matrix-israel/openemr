@@ -77,6 +77,29 @@ $REPEAT_ON_DAY = array(
     '6' => xl('Saturday')
 );
 
+function checkEvent($recurrtype, $recurrspec)
+{
+
+    $eFlag = 0;
+
+    switch ($recurrtype) {
+        case 1:
+        case 3:
+            if (empty($recurrspec['event_repeat_freq']) || !isset($recurrspec['event_repeat_freq_type'])) {
+                $eFlag = 1; }
+
+            break;
+
+        case 2:
+            if (empty($recurrspec['event_repeat_on_freq']) || empty($recurrspec['event_repeat_on_num']) || !isset($recurrspec['event_repeat_on_day'])) {
+                $eFlag = 1; }
+
+            break;
+    }
+
+    return $eFlag;
+}
+
 function fetchEvents($from_date, $to_date, $where_param = null, $orderby_param = null, $tracker_board = false, $nextX = 0, $bind_param = null, $query_param = null)
 {
 
@@ -130,10 +153,11 @@ function fetchEvents($from_date, $to_date, $where_param = null, $orderby_param =
         "e.pc_eventDate, e.pc_endDate, e.pc_startTime, e.pc_endTime, e.pc_duration, e.pc_recurrtype, e.pc_recurrspec, e.pc_recurrfreq, e.pc_catid, e.pc_eid, e.pc_gid, " .
         "e.pc_title, e.pc_hometext, e.pc_apptstatus, " .
         "p.fname, p.mname, p.lname, p.pid, p.pubpid, p.phone_home, p.phone_cell, " .
+        "p.hipaa_allowsms, p.phone_home, p.phone_cell, p.hipaa_voice, p.hipaa_allowemail, p.email, " .
         "u.fname AS ufname, u.mname AS umname, u.lname AS ulname, u.id AS uprovider_id, " .
         "f.name, " .
         "$tracker_fields" .
-        "c.pc_catname, c.pc_catid " .
+        "c.pc_catname, c.pc_catid, e.pc_facility " .
         "FROM openemr_postcalendar_events AS e " .
         "$tracker_joins" .
         "LEFT OUTER JOIN facility AS f ON e.pc_facility = f.id " .
@@ -184,6 +208,9 @@ function fetchEvents($from_date, $to_date, $where_param = null, $orderby_param =
             case '3':
                 $event_recurrspec = @unserialize($event['pc_recurrspec']);
 
+                if (checkEvent($event['pc_recurrtype'], $event_recurrspec)) {
+                    break; }
+
                 $rfreq = $event_recurrspec['event_repeat_freq'];
                 $rtype = $event_recurrspec['event_repeat_freq_type'];
                 $exdate = $event_recurrspec['exdate'];
@@ -232,6 +259,9 @@ function fetchEvents($from_date, $to_date, $where_param = null, $orderby_param =
       //////
             case '2':
                 $event_recurrspec = @unserialize($event['pc_recurrspec']);
+
+                if (checkEvent($event['pc_recurrtype'], $event_recurrspec)) {
+                    break; }
 
                 $rfreq = $event_recurrspec['event_repeat_on_freq'];
                 $rnum  = $event_recurrspec['event_repeat_on_num'];
@@ -620,7 +650,7 @@ function compareAppointmentsByCompletedDrugScreen($appointment1, $appointment2)
 function fetchAppointmentCategories()
 {
      $catSQL= " SELECT pc_catid as id, pc_catname as category "
-            . " FROM openemr_postcalendar_categories WHERE pc_recurrtype=0 and pc_cattype=0";
+            . " FROM openemr_postcalendar_categories WHERE pc_active=1 and pc_recurrtype=0 and pc_cattype=0";
     if ($GLOBALS['enable_group_therapy']) {
         $catSQL .= " OR pc_cattype=3";
     }
@@ -662,13 +692,15 @@ function fetchRecurrences($pid)
     $sqlBindArray = array();
     array_push($sqlBindArray, $pid);
     $res = sqlStatement($query, $sqlBindArray);
-    $row = 0;
-    while ($res_arr[$row] = sqlFetchArray($res)) {
-        $res_arr[$row]['pc_recurrspec'] = interpretRecurrence($res_arr[$row]['pc_recurrspec'], $res_arr[$row]['pc_recurrtype']);
-        $row++;
+    $result_data = array();
+    while ($row = sqlFetchArray($res)) {
+        $u_recurrspec = unserialize($row['pc_recurrspec']);
+        if (checkEvent($row['pc_recurrtype'], $u_recurrspec)) {
+            continue; }
+        $row['pc_recurrspec'] = interpretRecurrence($row['pc_recurrspec'], $row['pc_recurrtype']);
+        $result_data[] = $row;
     }
-
-    return $res_arr;
+    return $result_data;
 }
 
 function ends_in_a_week($end_date)

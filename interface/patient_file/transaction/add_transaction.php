@@ -7,7 +7,7 @@
  * @link      http://www.open-emr.org
  * @author    Rod Roark <rod@sunsetsystems.com>
  * @author    Brady Miller <brady.g.miller@gmail.com>
- * @copyright Copyright (c) 2017 Brady Miller <brady.g.miller@gmail.com>
+ * @copyright Copyright (c) 2017-2018 Brady Miller <brady.g.miller@gmail.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
 
@@ -24,7 +24,7 @@ $title   = empty($_REQUEST['title']) ? 'LBTref' : $_REQUEST['title'];
 $form_id = $title;
 
 // Plugin support.
-$fname = $GLOBALS['OE_SITE_DIR'] . "/LBF/$form_id.plugin.php";
+$fname = $GLOBALS['OE_SITE_DIR'] . "/LBF/" . convert_safe_file_dir_name($form_id) . ".plugin.php";
 if (file_exists($fname)) {
     include_once($fname);
 }
@@ -177,14 +177,14 @@ $(document).ready(function(){
   $('.datepicker').datetimepicker({
     <?php $datetimepicker_timepicker = false; ?>
     <?php $datetimepicker_showseconds = false; ?>
-    <?php $datetimepicker_formatInput = false; ?>
+    <?php $datetimepicker_formatInput = true; ?>
     <?php require($GLOBALS['srcdir'] . '/js/xl/jquery-datetimepicker-2-5-4.js.php'); ?>
     <?php // can add any additional javascript settings to datetimepicker here; need to prepend first setting with a comma ?>
   });
   $('.datetimepicker').datetimepicker({
     <?php $datetimepicker_timepicker = true; ?>
     <?php $datetimepicker_showseconds = false; ?>
-    <?php $datetimepicker_formatInput = false; ?>
+    <?php $datetimepicker_formatInput = true; ?>
     <?php require($GLOBALS['srcdir'] . '/js/xl/jquery-datetimepicker-2-5-4.js.php'); ?>
     <?php // can add any additional javascript settings to datetimepicker here; need to prepend first setting with a comma ?>
   });

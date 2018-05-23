@@ -78,7 +78,7 @@ use OpenEMR\Core\Header;
 
                 <p><?php echo xlt("Rather than granting access to each ACO individually for each user the program grants access to groups that request these privileges. These groups are called Access Request Objects (ARO)."); ?>
 
-                <p><?php echo xlt("The default installation has six such groups -  Accounting, Administrators, Clinicians, Emergency Login, Front Office and Physicians."); ?>
+                <p><?php echo xlt("The default installation has six such groups - Accounting, Administrators, Clinicians, Emergency Login, Front Office and Physicians."); ?>
 
                 <p><?php echo xlt("Each of these groups (AROs) has access to pre-determined parts of the program (ACOs)."); ?>
 
@@ -94,6 +94,14 @@ use OpenEMR\Core\Header;
 
                 <div id="aco_list" class='hideaway' style='display: none;'>
                     <ul>
+                        <li><strong><?php echo xlt('Accounting (acct)');?></strong></li>
+                            <ul>
+                                <li><?php echo xlt('Billing (write optional) (bill)');?></li>
+                                <li><?php echo xlt('Allowed to discount prices (in Fee Sheet or Checkout form) (disc)');?></li>
+                                <li><?php echo xlt('EOB Data Entry (eob)');?></li>
+                                <li><?php echo xlt('Financial Reporting - my encounters (rep)');?></li>
+                                <li><?php echo xlt('Financial Reporting - anything (rep_a)');?></li>
+                            </ul>
                         <li><strong><?php echo xlt('Administration (admin)');?></strong></li>
                             <ul>
                                 <li><?php echo xlt('Superuser - can delete patients, encounters, issues (super)');?></li>
@@ -107,24 +115,10 @@ use OpenEMR\Core\Header;
                                 <li><?php echo xlt('Language Interface Tool (language)');?></li>
                                 <li><?php echo xlt('Pharmacy Dispensary (drugs)');?></li>
                                 <li><?php echo xlt('ACL Administration (acl)');?></li>
-                            </ul>
-                        <li><strong><?php echo xlt('Accounting (acct)');?></strong></li>
-                            <ul>
-                                <li><?php echo xlt('Billing (write optional) (bill)');?></li>
-                                <li><?php echo xlt('Allowed to discount prices (in Fee Sheet or Checkout form) (disc)');?></li>
-                                <li><?php echo xlt('EOB Data Entry (eob)');?></li>
-                                <li><?php echo xlt('Financial Reporting - my encounters (rep)');?></li>
-                                <li><?php echo xlt('Financial Reporting - anything (rep_a)');?></li>
-                            </ul>
-                        <li><strong><?php echo xlt('Patient Information (patients)');?></strong></li>
-                            <ul>
-                                <li><?php echo xlt('Appointments (write,wsome optional) (appt)');?></li>
-                                <li><?php echo xlt('Demographics (write,addonly optional) (demo)');?></li>
-                                <li><?php echo xlt('Medical Records and History (write,addonly optional) (med)');?></li>
-                                <li><?php echo xlt('Transactions, e.g. referrals (write optional) (trans)');?></li>
-                                <li><?php echo xlt('Documents (write,addonly optional) (docs)');?></li>
-                                <li><?php echo xlt('Patient Notes (write,addonly optional) (notes)');?></li>
-                                <li><?php echo xlt('Sign Lab Results (write,addonly optional) (sign)');?></li>
+                                <li><?php echo xlt('Manage modules (manage_modules)');?> <i class="fa fa-exclamation-circle" style="color:blue" aria-hidden="true"></i>&nbsp;<strong><?php echo xlt("New in ACL Ver 7"); ?></strong></li>
+                                <li><?php echo xlt('Menu (menu)');?> <i class="fa fa-exclamation-circle" style="color:magenta" aria-hidden="true"></i>&nbsp;<strong><?php echo xlt("New in ACL Ver 6"); ?></strong></li>
+                                <li><?php echo xlt('Multipledb (multipledb)');?> <i class="fa fa-exclamation-circle" style="color:green" aria-hidden="true"></i>&nbsp;<strong><?php echo xlt("New in ACL Ver 5"); ?></strong></li>
+
                             </ul>
                         <li><strong><?php echo xlt('Encounter Information (encounters)');?></strong></li>
                             <ul>
@@ -137,11 +131,13 @@ use OpenEMR\Core\Header;
                                 <li><?php echo xlt('Fix encounter dates - any encounters (date_a)');?></li>
                                 <li><?php echo xlt('Less-private information (write,addonly optional) (relaxed)');?></li>
                             </ul>
-                        <li><strong><?php echo xlt('Squads (squads)');?></strong></li>
-                        <li><strong><?php echo xlt('Sensitivities (sensitivities)');?></strong></li>
+                        <li><strong><?php echo xlt('Groups (groups)');?></strong> <i class="fa fa-exclamation-circle" style="color:green" aria-hidden="true"></i>&nbsp;<strong><?php echo xlt("New in ACL Ver 5"); ?></strong></li>
                             <ul>
-                                <li><?php echo xlt('Normal (normal)');?></li>
-                                <li><?php echo xlt('High (high)');?></li>
+                                <li><?php echo xlt('View/Add/Update groups (gadd)');?> <i class="fa fa-exclamation-circle" style="color:green" aria-hidden="true"></i>&nbsp;<strong><?php echo xlt("New in ACL Ver 5"); ?></strong></li>
+                                <li><?php echo xlt('View/Create/Update groups appointment in calendar (gcalendar)');?> <i class="fa fa-exclamation-circle" style="color:green" aria-hidden="true"></i>&nbsp;<strong><?php echo xlt("New in ACL Ver 5"); ?></strong></li>
+                                <li><?php echo xlt('Group encounter log (glog)');?> <i class="fa fa-exclamation-circle" style="color:green" aria-hidden="true"></i>&nbsp;<strong><?php echo xlt("New in ACL Ver 5"); ?></strong></li>
+                                <li><?php echo xlt('Group detailed log of appointment in patient record (gdlog)');?> <i class="fa fa-exclamation-circle" style="color:green" aria-hidden="true"></i>&nbsp;<strong><?php echo xlt("New in ACL Ver 5"); ?></strong></li>
+                                <li><?php echo xlt('Send message from the permanent group therapist to the personal therapist (gm)');?> <i class="fa fa-exclamation-circle" style="color:green" aria-hidden="true"></i>&nbsp;<strong><?php echo xlt("New in ACL Ver 5"); ?></strong></li>
                             </ul>
                         <li><strong><?php echo xlt('Lists (lists)');?></strong></li>
                             <ul>
@@ -151,9 +147,9 @@ use OpenEMR\Core\Header;
                                 <li><?php echo xlt('Language List (write,addonly optional) (language)');?></li>
                                 <li><?php echo xlt('Ethnicity-Race List (write,addonly optional) (ethrace)');?></li>
                             </ul>
-                        <li><strong><?php echo xlt('Placeholder (placeholder)');?></strong></li>
+                        <li><strong><?php echo xlt('Menus (menus)');?></strong></li>
                             <ul>
-                                <li><?php echo xlt('Placeholder (Maintains empty ACLs) (filler)');?></li>
+                                <li><?php echo xlt('Modules (modle)');?></li>
                             </ul>
                         <li><strong><?php echo xlt('Nation Notes (nationnotes)');?></strong></li>
                             <ul>
@@ -163,6 +159,33 @@ use OpenEMR\Core\Header;
                             <ul>
                                 <li><?php echo xlt('Patient Portal (portal)');?></li>
                             </ul>
+                        <li><strong><?php echo xlt('Patients (patients)');?></strong></li>
+                            <ul>
+                                <li><?php echo xlt('Clinical Reminders/Alerts (write,addonly optional) (alert)');?> <i class="fa fa-exclamation-circle" style="color:orange" aria-hidden="true"></i>&nbsp;<strong><?php echo xlt("New in ACL Ver 4"); ?></strong></li>
+                                <li><?php echo xlt('Amendments (write,addonly optional) (amendment)');?> <i class="fa fa-exclamation-circle" style="color:orange" aria-hidden="true"></i>&nbsp;<strong><?php echo xlt("New in ACL Ver 4"); ?></strong></li>
+                                <li><?php echo xlt('Appointments (write,wsome optional) (appt)');?></li>
+                                <li><?php echo xlt('Demographics (write,addonly optional) (demo)');?></li>
+                                <li><?php echo xlt('Disclosures (write,addonly optional) (disclosure)');?> <i class="fa fa-exclamation-circle" style="color:orange" aria-hidden="true"></i>&nbsp;<strong><?php echo xlt("New in ACL Ver 4"); ?></strong></li>
+                                <li><?php echo xlt('Documents (write,addonly optional) (docs)');?></li>
+                                <li><?php echo xlt('Documents Delete (docs_rm)');?> <i class="fa fa-exclamation-circle" style="color:purple" aria-hidden="true"></i>&nbsp;<strong><?php echo xlt("New in ACL Ver 8"); ?></strong></li>
+                                <li><?php echo xlt('Lab Results (write,addonly optional)');?> <i class="fa fa-exclamation-circle" style="color:orange" aria-hidden="true"></i>&nbsp;<strong><?php echo xlt("New in ACL Ver 4"); ?></strong></li>
+                                <li><?php echo xlt('Medical/History (write,addonly optional) (med)');?></li>
+                                <li><?php echo xlt('Patient Notes (write,addonly optional) (notes)');?></li>
+                                <li><?php echo xlt('Patient Reminders (write,addonly optional) (reminder)');?> <i class="fa fa-exclamation-circle" style="color:orange" aria-hidden="true"></i>&nbsp;<strong><?php echo xlt("New in ACL Ver 4"); ?></strong></li>
+                                <li><?php echo xlt('Prescriptions (write,addonly optional) (rx)');?> <i class="fa fa-exclamation-circle" style="color:orange" aria-hidden="true"></i>&nbsp;<strong><?php echo xlt("New in ACL Ver 4"); ?></strong></li>
+                                <li><?php echo xlt('Sign Lab Results (write,addonly optional) (sign)');?></li>
+                                <li><?php echo xlt('Transactions (write optional) (trans)');?></li>
+                            </ul>
+                        <li><strong><?php echo xlt('Placeholder (placeholder)');?></strong></li>
+                            <ul>
+                                <li><?php echo xlt('Placeholder (Maintains empty ACLs) (filler)');?></li>
+                            </ul>
+                        <li><strong><?php echo xlt('Sensitivities (sensitivities)');?></strong></li>
+                            <ul>
+                                <li><?php echo xlt('Normal (normal)');?></li>
+                                <li><?php echo xlt('High (high)');?></li>
+                            </ul>
+                        <li><strong><?php echo xlt('Squads (squads)');?></strong></li>
                     </ul>
                 </div>
 
@@ -174,7 +197,7 @@ use OpenEMR\Core\Header;
             </div>
             <div class= "row" id="users_section">
                 <h4 class="oe-help-heading"><?php echo xlt("User Memberships"); ?><a href="#listed_items"><i class="fa fa-arrow-circle-up float-right oe-help-redirect" aria-hidden="true"></i></a></h4>
-                <p><?php echo xlt("By default the User Memberships section is selected and all the active registred users will be listed in alphabetical order by their user names."); ?>
+                <p><?php echo xlt("By default the User Memberships section is selected and all the active registered users will be listed in alphabetical order by their user names."); ?>
 
                 <p><?php echo xlt("Clicking on the icon next to their name will bring up the 'Edit' window."); ?>
 
@@ -190,7 +213,7 @@ use OpenEMR\Core\Header;
             </div>
             <div class= "row" id="groups_section">
                 <h4 class="oe-help-heading"><?php echo xlt("Groups and Access Controls"); ?><a href="#listed_items"><i class="fa fa-arrow-circle-up float-right oe-help-redirect" aria-hidden="true"></i></a></h4>
-                <p><?php echo xlt("Checking the Groups and Access Controls checkbox will reveal this section that lists all the categories with sub-categories (ACOs), i.e. the parts of the program contolled by the access control list privileges."); ?>
+                <p><?php echo xlt("Checking the Groups and Access Controls checkbox will reveal this section that lists all the categories with sub-categories (ACOs), i.e. the parts of the program controlled by the access control list privileges."); ?>
 
                 <p><?php echo xlt("It also lets you create new groups (AROs) as well as remove existing ones."); ?>
 
@@ -208,7 +231,7 @@ use OpenEMR\Core\Header;
 
                 <p><?php echo xlt("Move the individual items from 'Active' to 'Inactive' or vice-versa by selecting the items and pressing the relevant button with the double chevron."); ?>  <input class='button_submit' type='button' value=' >> ' >&nbsp;&nbsp;<input class='button_submit' type='button' value=' << ' >
 
-                <p><i class="fa fa-exclamation-circle" style="color:orange" aria-hidden="true"></i> <strong><?php echo xlt(" Note there is no 'Save' button."); ?></strong>
+                <p><i class="fa fa-exclamation-circle" style="color:orange" aria-hidden="true"></i> <strong><?php echo xlt("Note there is no 'Save' button."); ?></strong>
 
                 <p><?php echo xlt("Click the slashed-eye icon to close."); ?>
 

@@ -1,5 +1,7 @@
 <?php
 
+require_once(dirname(__FILE__) . "/crypto.php");
+
 function newEvent($event, $user, $groupname, $success, $comments = "", $patient_id = null, $log_from = 'open-emr', $menu_item = 'dashboard', $ccda_doc_id = 0)
 {
     $adodb = $GLOBALS['adodb']['db'];
@@ -45,11 +47,11 @@ function newEvent($event, $user, $groupname, $success, $comments = "", $patient_
 
     // Send item to log_comment_encrypt for comment encyption tracking
     $last_log_id = $GLOBALS['adodb']['db']->Insert_ID();
-    $encryptLogQry = "INSERT INTO log_comment_encrypt (log_id, encrypt, checksum) ".
+    $encryptLogQry = "INSERT INTO log_comment_encrypt (log_id, encrypt, checksum, `version`) ".
                      " VALUES ( ".
                      $adodb->qstr($last_log_id) . "," .
                      $adodb->qstr($encrypt_comment) . "," .
-                     "'')";
+                     "'', '1')";
     sqlInsertClean_audit($encryptLogQry);
 
     if (($patient_id=="NULL") || ($patient_id==null)) {
@@ -160,42 +162,55 @@ function getEvents($params)
             $sortby = "";  //VicarePlus :: since there is no category field in extended_log
         }
 
+        $sqlBindArray = array();
         $columns = "DISTINCT date, event, user, recipient,patient_id,description";
-        $sql = "SELECT $columns FROM extended_log WHERE date >= '$date1' AND date <= '$date2'";
+        $sql = "SELECT $columns FROM extended_log WHERE date >= ? AND date <= ?";
+        array_push($sqlBindArray, $date1, $date2);
+
         if ($user != "") {
-            $sql .= " AND user LIKE '$user'";
+            $sql .= " AND user LIKE ?";
+            array_push($sqlBindArray, $user);
         }
 
         if ($patient != "") {
-            $sql .= " AND patient_id LIKE '$patient'";
+            $sql .= " AND patient_id LIKE ?";
+            array_push($sqlBindArray, $patient);
         }
 
         if ($levent != "") {
-            $sql .= " AND event LIKE '$levent%'";
+            $sql .= " AND event LIKE ?";
+            array_push($sqlBindArray, $levent . "%");
         }
 
         if ($sortby != "") {
-            $sql .= " ORDER BY ".$sortby." DESC"; // descending order
+            $sql .= " ORDER BY " . escape_sql_column_name($sortby, array('extended_log')) . " DESC"; // descending order
         }
 
         $sql .= " LIMIT 5000";
     } else {
     // do the query
-        $sql = "SELECT $cols FROM log WHERE date >= '$date1' AND date <= '$date2'";
+        $sqlBindArray = array();
+        $sql = "SELECT $cols FROM log WHERE date >= ? AND date <= ?";
+        array_push($sqlBindArray, $date1, $date2);
+
         if ($user != "") {
-            $sql .= " AND user LIKE '$user'";
+            $sql .= " AND user LIKE ?";
+            array_push($sqlBindArray, $user);
         }
 
         if ($patient != "") {
-            $sql .= " AND patient_id LIKE '$patient'";
+            $sql .= " AND patient_id LIKE ?";
+            array_push($sqlBindArray, $patient);
         }
 
         if ($levent != "") {
-            $sql .= " AND event LIKE '$levent%'";
+            $sql .= " AND event LIKE ?";
+            array_push($sqlBindArray, $levent . "%");
         }
 
         if ($tevent != "") {
-            $sql .= " AND event LIKE '%$tevent'";
+            $sql .= " AND event LIKE ?";
+            array_push($sqlBindArray, "%" . $tevent);
         }
 
         if ($sortby != "") {
@@ -205,7 +220,7 @@ function getEvents($params)
         $sql .= " LIMIT 5000";
     }
 
-    $res = sqlStatement($sql);
+    $res = sqlStatement($sql, $sqlBindArray);
     for ($iter=0; $row=sqlFetchArray($res); $iter++) {
         $all[$iter] = $row;
     }
@@ -852,11 +867,11 @@ function auditSQLEvent($statement, $outcome, $binds = null)
         $checksumGenerate = sha1($concatLogColumns);
     }
 
-    $encryptLogQry = "INSERT INTO log_comment_encrypt (log_id, encrypt, checksum) ".
+    $encryptLogQry = "INSERT INTO log_comment_encrypt (log_id, encrypt, checksum, `version`) ".
                      " VALUES ( ".
                       $adodb->qstr($last_log_id) . "," .
                       $adodb->qstr($encrypt_comment) . "," .
-                      $adodb->qstr($checksumGenerate) .")";
+                      $adodb->qstr($checksumGenerate) .", '1')";
     sqlInsertClean_audit($encryptLogQry);
 
     send_atna_audit_msg($user, $group, $event, $pid, $success, $comments);
@@ -948,52 +963,6 @@ function deleteDisclosure($deletelid)
         $ret = sqlInsertClean_audit($sql);
 }
 
-//July 1, 2014: Ensoftek: Function to AES256 encrypt a given string
-function aes256Encrypt($sValue)
-{
-    $sSecretKey = pack('H*', "bcb04b7e103a0cd8b54763051cef08bc55abe029fdebae5e1d417e2ffb2a00a3");
-    return rtrim(
-        base64_encode(
-            mcrypt_encrypt(
-                MCRYPT_RIJNDAEL_256,
-                $sSecretKey,
-                $sValue,
-                MCRYPT_MODE_ECB,
-                mcrypt_create_iv(
-                    mcrypt_get_iv_size(
-                        MCRYPT_RIJNDAEL_256,
-                        MCRYPT_MODE_ECB
-                    ),
-                    MCRYPT_RAND
-                )
-            )
-        ),
-        "\0"
-    );
-}
-
-//July 1, 2014: Ensoftek: Function to AES256 decrypt a given string
-function aes256Decrypt($sValue)
-{
-    $sSecretKey = pack('H*', "bcb04b7e103a0cd8b54763051cef08bc55abe029fdebae5e1d417e2ffb2a00a3");
-    return rtrim(
-        mcrypt_decrypt(
-            MCRYPT_RIJNDAEL_256,
-            $sSecretKey,
-            base64_decode($sValue),
-            MCRYPT_MODE_ECB,
-            mcrypt_create_iv(
-                mcrypt_get_iv_size(
-                    MCRYPT_RIJNDAEL_256,
-                    MCRYPT_MODE_ECB
-                ),
-                MCRYPT_RAND
-            )
-        ),
-        "\0"
-    );
-}
-
 //July 1, 2014: Ensoftek: Utility function to get data from table(log_comment_encrypt)
 function logCommentEncryptData($log_id)
 {
@@ -1002,6 +971,7 @@ function logCommentEncryptData($log_id)
     while ($logRow = sqlFetchArray($logRes)) {
         $encryptRow['encrypt'] = $logRow['encrypt'];
         $encryptRow['checksum'] = $logRow['checksum'];
+        $encryptRow['version'] = $logRow['version'];
     }
 
     return $encryptRow;

@@ -7,9 +7,10 @@
  * @author    Rod Roark <rod@sunsetsystems.com>
  * @author    Brady Miller <brady.g.miller@gmail.com>
  * @copyright Copyright (c) 2006-2010 Rod Roark <rod@sunsetsystems.com>
- * @copyright Copyright (c) 2017 Brady Miller <brady.g.miller@gmail.com>
+ * @copyright Copyright (c) 2017-2018 Brady Miller <brady.g.miller@gmail.com>
  * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
+
 
 require_once("../globals.php");
 require_once("$srcdir/patient.inc");
@@ -18,17 +19,23 @@ require_once("$srcdir/forms.inc");
 require_once("$srcdir/options.inc.php");
 require_once("$srcdir/gprelations.inc.php");
 
+use OpenEMR\Core\Header;
+
 if ($_GET['file']) {
     $mode = 'fax';
     $filename = $_GET['file'];
 
-  // ensure the file variable has no illegal characters
+    // ensure the file variable has no illegal characters
     check_file_dir_name($filename);
 
     $filepath = $GLOBALS['hylafax_basedir'] . '/recvq/' . $filename;
 } else if ($_GET['scan']) {
     $mode = 'scan';
     $filename = $_GET['scan'];
+
+    // ensure the file variable has no illegal characters
+    check_file_dir_name($filename);
+
     $filepath = $GLOBALS['scanner_output_directory'] . '/' . $filename;
 } else {
     die("No filename was given.");
@@ -455,12 +462,9 @@ $ures = sqlStatement("SELECT username, fname, lname FROM users " .
 ?>
 <html>
 <head>
-<?php if (function_exists(html_header_show)) {
-    html_header_show();
-} ?>
-<title><?php xl('Dispatch Received Document', 'e'); ?></title>
-<link rel="stylesheet" href='<?php echo $css_header ?>' type='text/css'>
-<link rel="stylesheet" href="<?php echo $GLOBALS['assets_static_relative']; ?>/jquery-datetimepicker-2-5-4/build/jquery.datetimepicker.min.css">
+
+    <?php Header::setupHeader(['opener', 'datetime-picker', 'jquery-ui',]);?>
+    <title><?php xl('Dispatch Received Document', 'e'); ?></title>
 
 <style>
 
@@ -482,15 +486,9 @@ div.section {
 
 </style>
 
-<script type="text/javascript" src="../../library/topdialog.js?v=<?php echo $v_js_includes; ?>"></script>
-<script type="text/javascript" src="../../library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
-<script type="text/javascript" src="../../library/textformat.js?v=<?php echo $v_js_includes; ?>"></script>
-<script type="text/javascript" src="<?php echo $GLOBALS['assets_static_relative']; ?>/jquery-min-1-7-2/index.js"></script>
-<script type="text/javascript" src="<?php echo $GLOBALS['assets_static_relative']; ?>/jquery-datetimepicker-2-5-4/build/jquery.datetimepicker.full.min.js"></script>
-
 <script language="JavaScript">
 
-<?php require($GLOBALS['srcdir'] . "/restoreSession.php"); ?>
+    <?php require($GLOBALS['srcdir'] . "/restoreSession.php"); ?>
 
  function divclick(cb, divid) {
   var divstyle = document.getElementById(divid).style;
@@ -523,7 +521,7 @@ div.section {
 
  // This invokes the find-patient popup.
  function sel_patient() {
-  dlgopen('../main/calendar/find_patient_popup.php', '_blank', 500, 400);
+  dlgopen('../main/calendar/find_patient_popup.php', '_blank', 750, 550, false, 'Select Patient');
  }
 
  // Check for errors when the form is submitted.

@@ -2,11 +2,13 @@
 /**
  * patient.inc includes functions for manipulating patient information.
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * @package   OpenEMR
+ * @link      http://www.open-emr.org
+ * @author    Brady Miller <brady.g.miller@gmail.com>
+ * @copyright Copyright (c) 2018 Brady Miller <brady.g.miller@gmail.com>
+ * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
  */
+
 
 use OpenEMR\Services\FacilityService;
 
@@ -832,7 +834,6 @@ function getPatientName($pid)
 /* find patient data by DOB */
 function getPatientDOB($DOB = "%", $given = "pid, id, lname, fname, mname", $orderby = "lname ASC, fname ASC", $limit = "all", $start = "0")
 {
-    $DOB = fixDate($DOB, $DOB);
     $sqlBindArray = array();
     $where = "DOB like ? ";
     array_push($sqlBindArray, $DOB."%");
@@ -967,9 +968,6 @@ function newPatientData(
     $hipaa_message = "",
     $regdate = ""
 ) {
-
-    $DOB = fixDate($DOB);
-    $regdate = fixDate($regdate);
 
     $fitness = 0;
     $referral_source = '';
@@ -1110,13 +1108,12 @@ function updatePatientData($pid, $new, $create = false)
 {
   /*******************************************************************
     $real = getPatientData($pid);
-    $new['DOB'] = fixDate($new['DOB']);
-    while(list($key, $value) = each ($new))
+    foreach ($new as $key => $value)
         $real[$key] = $value;
     $real['date'] = "'+NOW()+'";
     $real['id'] = "";
     $sql = "insert into patient_data set ";
-    while(list($key, $value) = each($real))
+    foreach ($real as $key => $value)
         $sql .= $key." = '$value', ";
     $sql = substr($sql, 0, -2);
     return sqlInsert($sql);
@@ -1125,8 +1122,6 @@ function updatePatientData($pid, $new, $create = false)
   // The above was broken, though seems intent to insert a new patient_data
   // row for each update.  A good idea, but nothing is doing that yet so
   // the code below does not yet attempt it.
-
-    $new['DOB'] = fixDate($new['DOB']);
 
     if ($create) {
         $sql = "INSERT INTO patient_data SET pid = '" . add_escape_custom($pid) . "', date = NOW()";
@@ -1260,8 +1255,13 @@ function newInsuranceData(
         return false;
     }
 
-  // If a bad date was passed, err on the side of caution.
-    $effective_date = fixDate($effective_date, date('Y-m-d'));
+    // If empty dates were passed, then zero them.
+    if (empty($effective_date)) {
+        $effective_date = '0000-00-00';
+    }
+    if (empty($subscriber_DOB)) {
+        $subscriber_DOB = '0000-00-00';
+    }
 
     $idres = sqlStatement("SELECT * FROM insurance_data WHERE " .
     "pid = ? AND type = ? ORDER BY date DESC", array($pid,$type));
@@ -1373,14 +1373,14 @@ function updateInsuranceData($id, $new)
     $fields = sqlListFields("insurance_data");
     $use = array();
 
-    while (list($key, $value) = each($new)) {
+    foreach ($new as $key => $value) {
         if (in_array($key, $fields)) {
             $use[$key] = $value;
         }
     }
 
     $sql = "UPDATE insurance_data SET ";
-    while (list($key, $value) = each($use)) {
+    foreach ($use as $key => $value) {
         $sql .= "`$key` = '" . add_escape_custom($value) . "', ";
     }
 
@@ -1395,7 +1395,7 @@ function newHistoryData($pid, $new = false)
     $sql = "insert into history_data set pid = ?, date = NOW()";
     array_push($arraySqlBind, $pid);
     if ($new) {
-        while (list($key, $value) = each($new)) {
+        foreach ($new as $key => $value) {
             array_push($arraySqlBind, $value);
             $sql .= ", `$key` = ?";
         }
@@ -1406,25 +1406,25 @@ function newHistoryData($pid, $new = false)
 
 function updateHistoryData($pid, $new)
 {
-        $real = getHistoryData($pid);
-    while (list($key, $value) = each($new)) {
+    $real = getHistoryData($pid);
+    foreach ($new as $key => $value) {
         $real[$key] = $value;
     }
 
-        $real['id'] = "";
+    $real['id'] = "";
     // need to unset date, so can reset it below
     unset($real['date']);
 
-        $arraySqlBind = array();
-        $sql = "insert into history_data set `date` = NOW(), ";
-    while (list($key, $value) = each($real)) {
+    $arraySqlBind = array();
+    $sql = "insert into history_data set `date` = NOW(), ";
+    foreach ($real as $key => $value) {
         array_push($arraySqlBind, $value);
         $sql .= "`$key` = ?, ";
     }
 
-        $sql = substr($sql, 0, -2);
+    $sql = substr($sql, 0, -2);
 
-        return sqlInsert($sql, $arraySqlBind);
+    return sqlInsert($sql, $arraySqlBind);
 }
 
 // Returns Age
@@ -1882,14 +1882,21 @@ function getEffectiveInsurances($patient_id, $encdate)
  *
  * @param int     The PID of the patient.
  * @param boolean Indicates if amounts owed by insurance are to be included.
+ * @param int     Optional encounter id. If value is passed, will fetch only bills from specified encounter.
  * @return number The balance.
  */
-function get_patient_balance($pid, $with_insurance = false)
+function get_patient_balance($pid, $with_insurance = false, $eid = false)
 {
     $balance = 0;
-    $feres = sqlStatement("SELECT date, encounter, last_level_billed, " .
+    $bindarray = array($pid);
+    $sqlstatement = "SELECT date, encounter, last_level_billed, " .
       "last_level_closed, stmt_count " .
-      "FROM form_encounter WHERE pid = ?", array($pid));
+      "FROM form_encounter WHERE pid = ?";
+    if ($eid) {
+        $sqlstatement .= " AND encounter = ?";
+        array_push($bindarray, $eid);
+    }
+    $feres = sqlStatement($sqlstatement, $bindarray);
     while ($ferow = sqlFetchArray($feres)) {
         $encounter = $ferow['encounter'];
         $dos = substr($ferow['date'], 0, 10);

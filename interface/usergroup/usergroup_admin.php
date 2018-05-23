@@ -27,7 +27,7 @@ $set_active_msg=0;
 $show_message=0;
 
 /* Sending a mail to the admin when the breakglass user is activated only if $GLOBALS['Emergency_Login_email'] is set to 1 */
-$bg_count=count($access_group);
+$bg_count=count($_POST['access_group']);
 $mail_id = explode(".", $SMTP_HOST);
 for ($i=0; $i<$bg_count; $i++) {
     if (($_POST['access_group'][$i] == "Emergency Login") && ($_POST['active'] == 'on') && ($_POST['pre_active'] == 0)) {
@@ -196,6 +196,11 @@ if (isset($_POST["privatemode"]) && $_POST["privatemode"] =="user_admin") {
               sqlStatement("update `users` set `main_menu_role` = ? where `id` = ? ", array($mainMenuRole, $_POST["id"]));
         }
 
+        if ($_POST["patient_menu_role"]) {
+            $patientMenuRole = filter_input(INPUT_POST, 'patient_menu_role');
+            sqlStatement("update `users` set `patient_menu_role` = ? where `id` = ? ", array($patientMenuRole, $_POST["id"]));
+        }
+
         if ($_POST["erxprid"]) {
             $erxprid = formData('erxprid', 'P');
             sqlStatement("update users set weno_prov_id = '$erxprid' where id = ? ", array($_POST["id"]));
@@ -253,6 +258,7 @@ if (isset($_POST["mode"])) {
             "', newcrop_user_role = '"  . trim(formData('erxrole')) .
             "', physician_type = '"  . trim(formData('physician_type')) .
             "', main_menu_role = '"  . trim(formData('main_menu_role')) .
+            "', patient_menu_role = '"  . trim(formData('patient_menu_role')) .
             "', weno_prov_id = '"  . trim(formData('erxprid')) .
             "', authorized = '"    . trim(formData('authorized')) .
             "', info = '"          . trim(formData('info')) .
@@ -394,7 +400,7 @@ $form_inactive = empty($_REQUEST['form_inactive']) ? false : true;
 ?>
 <html>
 <head>
-<title><?php echo xlt('User / Group');?></title>
+<title><?php echo xlt('User / Groups');?></title>
 
 <?php Header::setupHeader(['common','jquery-ui']); ?>
 

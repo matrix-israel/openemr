@@ -1,10 +1,15 @@
 <?php
-// Copyright (C) 2010-2015 Rod Roark <rod@sunsetsystems.com>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+/*
+ * This program sets the global variables.
+ *
+ * @package OpenEMR
+ * @author Rod Roark <rod@sunsetsystems.com>
+ * @author Stephen Waite <stephen.waite@cmsvt.com>
+ * @copyright Copyright (c) 2015 Rod Roark <rod@sunsetsystems.com>
+ * @copyright Copyright (c) 2018 Stephen Waite <stephen.waite@cmsvt.com>
+ * @link https://github.com/openemr/openemr/tree/master
+ * @license https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
+ */
 
 // $GLOBALS['print_command'] is the
 // Print command for spooling to printers, used by statements.inc.php
@@ -33,6 +38,7 @@
 //   English (Indian)               // xl('English (Indian)')
 //   English (Standard)             // xl('English (Standard)')
 //   Estonian                       // xl('Estonian')
+//   Filipino                       // xl('Filipino')
 //   Finnish                        // xl('Finnish')
 //   French                         // xl('French (Standard)')
 //   French                         // xl('French (Canadian)')
@@ -101,6 +107,7 @@ $USER_SPECIFIC_TABS = array('Appearance',
     'CDR',
     'Connectors');
 $USER_SPECIFIC_GLOBALS = array('default_top_pane',
+    'default_second_tab',
     'new_tabs_layout',
     'theme_tabs_layout',
     'css_header',
@@ -118,6 +125,9 @@ $USER_SPECIFIC_GLOBALS = array('default_top_pane',
     'event_color',
     'pat_trkr_timer',
     'ptkr_visit_reason',
+    'ptkr_date_range',
+    'ptkr_start_date',
+    'ptkr_end_date',
     'checkout_roll_off',
     'patient_birthday_alert',
     'patient_birthday_alert_manual_off',
@@ -143,15 +153,29 @@ $GLOBALS_METADATA = array(
     'Appearance' => array(
 
         'default_top_pane' => array(
-            xl('Main Top Pane Screen'),       // descriptive name
+            xl('Main Top Pane Screen(Or Default First Tab)'),       // descriptive name
             array(
                 'main_info.php' => xl('Calendar Screen'),
                 '../new/new.php' => xl('Patient Search/Add Screen'),
                 '../../interface/main/finder/dynamic_finder.php' => xl('Patient Finder Screen'),
                 '../../interface/patient_tracker/patient_tracker.php?skip_timeout_reset=1' => xl('Patient Flow Board'),
+                '../../interface/main/messages/messages.php?form_active=1' => xl('Messages Screen')
             ),
             'main_info.php',                  // default = calendar
-            xl('Type of screen layout')
+            xl('Main Top Pane Screen(Or Default First Tab)')
+        ),
+
+        'default_second_tab' => array(
+            xl('Default Second Tab'),       // descriptive name
+            array(
+                '../../interface/main/messages/messages.php?form_active=1' => xl('Messages Screen'),
+                'main_info.php' => xl('Calendar Screen'),
+                '../new/new.php' => xl('Patient Search/Add Screen'),
+                '../../interface/main/finder/dynamic_finder.php' => xl('Patient Finder Screen'),
+                '../../interface/patient_tracker/patient_tracker.php?skip_timeout_reset=1' => xl('Patient Flow Board'),
+            ),
+            '../../interface/main/messages/messages.php?form_active=1',    // default = messages
+            xl('Default Second Tab')
         ),
 
         'new_tabs_layout' => array(
@@ -178,9 +202,9 @@ $GLOBALS_METADATA = array(
             xl('Pick a general theme (need to logout/login after change this setting).')
         ),
 
-        'font-family' => [
+        'font-family' => array(
             xl('Default font (need to logout/login after change this setting)'),
-            [
+            array(
                 '__default__' => 'Use Theme Font',
                 'Arial, Helvetica, sans-serif' => "Arial",
                 '"Arial Black", Gadget, sans-serif' => "Arial Black",
@@ -190,24 +214,24 @@ $GLOBALS_METADATA = array(
                 '"Trebuchet MS", Helvetica, sans-serif' => "Trebuchet MS",
                 'Verdana, Geneva, sans-serif' => "Verdana",
                 'lato' => "Lato",
-            ],
+            ),
             '__default__',
             xl('Select the default font'),
-        ],
+        ),
 
-        'font-size' => [
+        'font-size' => array(
             xl('Default font size (need to logout/login after change this setting)'),
-            [
+            array(
                 '__default__' => 'Use Theme Font Size',
                 '10px' => '10px',
                 '12px' => '12px',
                 '14px' => '14px',
                 '16px' => '16px',
                 '18px' => '18px',
-            ],
+            ),
             '__default__',
             xl("Select the default font size"),
-        ],
+        ),
 
         'menu_styling_vertical' => array(
             xl('Vertical Menu Style'),
@@ -400,6 +424,13 @@ $GLOBALS_METADATA = array(
             'bool',                           // data type
             '0',                              // default = false
             xl('Default state of New Window checkbox in the patient list.')
+        ),
+
+        'num_of_messages_displayed' => array(
+            xl('Number of Messages Displayed in Patient Summary'),
+            'num',
+            '3',
+            xl('This is the number of messages that will be displayed in the messages widget in the patient summary screen.')
         ),
 
         'gbl_vitals_options' => array(
@@ -701,12 +732,12 @@ $GLOBALS_METADATA = array(
             xl('Option to support inventory and sales of products')
         ),
 
-        'default_visit_category' => [
+        'default_visit_category' => array(
             xl('Default Visit Category'),
             'default_visit_category',
             '_blank',
             xl('Define a default visit category'),
-        ],
+        ),
 
         'disable_chart_tracker' => array(
             xl('Disable Chart Tracker'),
@@ -847,7 +878,7 @@ $GLOBALS_METADATA = array(
             '0',                              // default = false
             xl('This will force the Billing Widget in the Patient Summary screen to always be open.')
         ),
-        
+
         'activate_ccr_ccd_report' => array(
             xl('Activate CCR/CCD Reporting'),
             'bool',                           // data type
@@ -1006,16 +1037,6 @@ $GLOBALS_METADATA = array(
             'bool',                           // data type
             '0',                              // default = false
             xl('Overlay CMS 1500 on the Preprinted form')
-        ),
-
-        'cms_1500' => array(
-            xl('CMS 1500 Paper Form Format'),
-            array(
-                '0' => xl('08/05{{CMS 1500 format date revision setting in globals}}'),
-                '1' => xl('02/12{{CMS 1500 format date revision setting in globals}}'),
-            ),
-            '1',                              // default
-            xl('This specifies which revision of the form the billing module should generate')
         ),
 
         'cms_1500_box_31_format' => array(
@@ -1585,42 +1606,91 @@ $GLOBALS_METADATA = array(
             '1',                              // default
             xl('Automatically create a new encounter when an appointment check in status is selected.')
         ),
+
         'allow_early_check_in' => array(
             xl('Allow Early Check In'),
             'bool',                           // data type
             '1',                              // default
             xl("Allow Check In before the appointment's time.")
         ),
+
+        'submit_changes_for_all_appts_at_once' => array(
+            xl('Submit Changes For All Appts At Once'),
+            'bool',                           // data type
+            '1',                              // default
+            xl('Enables to submit changes for all appointments of a recurrence at once.')
+        ),
+
         'disable_pat_trkr' => array(
-            xl('Disable Patient Flow Board'),
+            xl('Flow Board: Disable'),
             'bool',                           // data type
             '0',                              // default
-            xl('Do not display the patient flow board.')
+            xl('Completely remove the ability to display the Patient Flow Board.')
         ),
 
         'ptkr_visit_reason' => array(
-            xl('Show Visit Reason in Patient Flow Board'),
+            xl('Flow Board: Show Visit Reason'),
             'bool',                           // data type
             '0',                              // default = false
             xl('When Checked, Visit Reason Will Show in Patient Flow Board.')
         ),
 
         'ptkr_show_pid' => array(
-            xl('Show Patient ID in Patient Flow Board'),
+            xl('Flow Board: Show Patient ID'),
             'bool',                           // data type
             '1',                              // default = true
             xl('When Checked, Patient ID Will Show in Patient Flow Board.')
         ),
 
         'ptkr_show_encounter' => array(
-            xl('Show Patient Encounter Number in Patient Flow Board'),
+            xl('Flow Board: Show Encounter Number'),
             'bool',                           // data type
             '1',                              // default = true
             xl('When Checked, Patient Encounter Number Will Show in Patient Flow Board.')
         ),
 
+        'ptkr_show_staff' => array(
+            xl('Flow Board: Show Staff Action'),
+            'bool',                           // data type
+            '1',                              // default = true
+            xl('When Checked, Last Staff to Update Board Will Show in Patient Flow Board.')
+        ),
+
+        'ptkr_date_range' => array(
+            xl('Flow Board: Allow Date Range'),
+            'bool',                          // data type
+            '1',                             // default = true
+            xl('This Allows a Date Range to be Selected in Patient Flow Board.')
+        ),
+
+        'ptkr_start_date'=> array(
+            xl('Flow Board: Default Starting Date'),
+            array(
+                'D0' => xl('Current Day'),
+                'B0' => xl('Beginning of Current Work Week'),
+            ),
+            'D0',                    // default = Current Day
+            xl('This is the default Beginning date for the Patient Flow Board. (only applicable if Allow Date Range in option above is Enabled)')
+        ),
+
+        'ptkr_end_date' => array(
+            xl('Flow Board: Default Ending Date'),
+            array(
+                'Y1' => xl('One Year Ahead'),
+                'Y2' => xl('Two Years Ahead'),
+                'M6' => xl('Six Months Ahead'),
+                'M3' => xl('Three Months Ahead'),
+                'M1' => xl('One Month Ahead'),
+                'D7' => xl('One Week Ahead'),
+                'D1' => xl('One Day Ahead'),
+                'D0' => xl('Current Day'),
+            ),
+            'D0',                     // default = One Day Ahead
+            xl('This is the default Ending date for the Patient Flow Board. (only applicable if Allow Date Range in option above is Enabled)')
+        ),
+
         'pat_trkr_timer' => array(
-            xl('Patient Flow Board Timer Interval'),
+            xl('Flow Board: Timer Refresh Interval'),
             array(
                 '0' => xl('No automatic refresh'),
                 '0:10' => '10',
@@ -1635,39 +1705,41 @@ $GLOBALS_METADATA = array(
         ),
 
         'checkout_roll_off' => array(
-            xl('Number of Minutes to display completed checkouts'),
+            xl('Flow Board: display completed checkouts (minutes)'),
             'num',
             '0',                       // default
-            xl('Number of Minutes to display completed checkouts. Zero is continuous display')
+            xl('Flow Board will only display completed checkouts for this many minutes. Zero is continuous display.')
         ),
 
         'drug_screen' => array(
-            xl('Enable Random Drug Testing'),
+            xl('Flow Board: Enable Random Drug Testing'),
             'bool',                           // data type
             '0',                              // default
             xl('Allow Patient Flow Board to Select Patients for Drug Testing.')
         ),
 
         'drug_testing_percentage' => array(
-            xl('Percentage of Patients to Drug Test'),
+            xl('Flow Board: Percentage of Patients to Drug Test'),
             'num',
             '33',                       // default
             xl('Percentage of Patients to select for Random Drug Testing.')
         ),
 
         'maximum_drug_test_yearly' => array(
-            xl('Maximum number of times a Patient can be tested in a year'),
+            xl('Flow Board: Max tests per Patient per year'),
             'num',
             '0',                       // default
             xl('Maximum number of times a Patient can be tested in a year. Zero is no limit.')
         ),
 
-        'submit_changes_for_all_appts_at_once' => array(
-            xl('Submit Changes For All Appts At Once'),
-            'bool',                           // data type
-            '1',                              // default
-            xl('Enables to submit changes for all appointments of a recurrence at once.')
+        'disable_rcb' => array(
+          xl('Recall Board: Disable'),
+          'bool',                           // data type
+          '0',                              // default
+          xl('Do not display the Recall Board.')
         ),
+
+
 
 
     ),
@@ -2104,7 +2176,8 @@ $GLOBALS_METADATA = array(
             array(
                 '0' => xl('No alert'),
                 '1' => xl('Alert only on birthday'),
-                '2' => xl('Alert on and after birthday')
+                '2' => xl('Alert on and after birthday'),
+                '3' => xl('Alert on and up to 28 days after birthday')
             ),
             '1',                              // default
             xl('Alert on patient birthday')
@@ -2411,7 +2484,7 @@ $GLOBALS_METADATA = array(
             xl('Enable Version 2 Onsite Patient Portal'),
             'bool',                           // data type
             '0',
-            xl('Enable Version 2 Onsite Patient Portal.')
+            xl('Enable Version 2 Onsite Patient Portal')
         ),
 
         'portal_onsite_two_address' => array(
@@ -2453,7 +2526,7 @@ $GLOBALS_METADATA = array(
             xl('Enable Version 1 Onsite Patient Portal'),
             'bool',                           // data type
             '0',
-            xl('Enable Version 1 Onsite Patient Portal.')
+            xl('Enable Version 1 Onsite Patient Portal')
         ),
 
         'portal_onsite_address' => array(
@@ -2547,6 +2620,31 @@ $GLOBALS_METADATA = array(
     // Connectors Tab
     //
     'Connectors' => array(
+
+        'fhir_enable' => array(
+            xl('Enable FHIR Provider Client Service'),
+            array(
+                0 => xl('Off: No Service.'),
+                1 => xl('On: HAPI FHIR.'),
+                2 => xl('On: Smart on FHIR.'),
+            ),
+            '0',
+            xl('Enable FHIR Provider Client Service')
+        ),
+
+        'fhir_base_url' => array(
+            xl('FHIR Server Base Address'),
+            'text',
+            'https://hapi.fhir.org/baseDstu3/',
+            xl('Base URL for FHIR Server. Url should end with /')
+        ),
+
+        'medex_enable' => array(
+          xl('Enable MedEx Communication Service'),
+          'bool',                           // data type
+          '0',
+          xl('Enable MedEx Communication Service')
+        ),
 
         'erx_enable' => array(
             xl('Enable NewCrop eRx Service'),
@@ -2668,27 +2766,27 @@ $GLOBALS_METADATA = array(
             xl('Enable Weno eRx Service'),
             'bool',
             '0',
-            xl('Enable Weno eRx Service.') . ' ' . xl('Contact Open Med Practice, www.openmedpractice.com for subscribing to the Weno Free eRx service.')
+            xl('Enable Weno eRx Service') . ' ' . xl('Contact Open Med Practice, www.openmedpractice.com for subscribing to the Weno Free eRx service.')
         ),
 
         'weno_account_id' => array(
             xl('Weno eRx Account Id'),
             'text',
-            '',
+            '137',
             xl('Account Id issued for Weno eRx service.')
         ),
 
         'weno_account_pass' => array(
             xl('Weno eRx Account Pass'),
             'text',
-            '',
+            '7C84773D5063B20BC9E41636A091C6F17E9C1E34',
             xl('Account Id issued for Weno eRx service.')
         ),
 
         'weno_provider_id' => array(
             xl('Weno eRx Clinic ID'),
             'text',
-            '',
+            'C36275',
             xl('Account Id issued for Your clinics eRx service.')
         ),
 
@@ -3248,7 +3346,7 @@ $GLOBALS_METADATA = array(
             xl('Envelope y-axis starting pt'),
             'num',                           // data type
             '220',
-            xl(' Distance from the right most edge of the envelope in portrait position in mm')
+            xl('Distance from the right most edge of the envelope in portrait position in mm')
         ),
 
     ),

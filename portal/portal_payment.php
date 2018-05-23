@@ -52,6 +52,8 @@ require_once("../custom/code_types.inc.php");
 require_once("$srcdir/formatting.inc.php");
 require_once("$srcdir/options.inc.php");
 require_once("$srcdir/encounter_events.inc.php");
+require_once("$srcdir/log.inc");
+require_once("$srcdir/crypto.php");
 
 $appsql = new ApplicationTable();
 
@@ -1190,7 +1192,7 @@ if (isset($ccdata["name"])) {
     ?>
                      <div class="panel-body">
                              <strong><?php echo xlt('Card Name');?>:  </strong><span id="cn"><?php echo attr($ccdata["cc_type"])?></span><br>
-                            <strong><?php echo xlt('Name On Card');?>:  </strong><span id="nc"><?php echo attr($ccdata["name"])?></span><br>
+                            <strong><?php echo xlt('Name on Card');?>:  </strong><span id="nc"><?php echo attr($ccdata["name"])?></span><br>
                             <strong><?php echo xlt('Card Number');?>:  </strong><span id="ccn"><?php
                             if (isset($_SESSION['authUserID'])) {
                                 echo $ccdata["cc_number"] . "</span><br>";

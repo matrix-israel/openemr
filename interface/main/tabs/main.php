@@ -105,6 +105,7 @@ function isEncounterLocked( encounterId ) {
     <?php } ?>
 }
 var webroot_url="<?php echo $web_root; ?>";
+var jsLanguageDirection = "<?php echo $_SESSION["language_direction"]; ?>";
 </script>
 
 <?php Header::setupHeader(["knockout","tabs-theme",'jquery-ui']); ?>
@@ -166,6 +167,12 @@ $GLOBALS['allow_issue_menu_link'] = ((acl_check('encounters', 'notes', '', 'writ
     <?php } ?>
     <?php unset($_SESSION['frame1url']); ?>
     <?php unset($_SESSION['frame1target']); ?>
+    <?php if (!empty($_SESSION['frame2url']) && !empty($_SESSION['frame2target'])) { ?>
+    app_view_model.application_data.tabs.tabsList()[1].url(<?php echo json_encode("../".$_SESSION['frame2url']); ?>);
+    app_view_model.application_data.tabs.tabsList()[1].name(<?php echo json_encode($_SESSION['frame2target']); ?>);
+    <?php } ?>
+    <?php unset($_SESSION['frame2url']); ?>
+    <?php unset($_SESSION['frame2target']); ?>
 
     app_view_model.application_data.user(new user_data_view_model(<?php echo json_encode($_SESSION{"authUser"})
         .',' . json_encode($userQuery['fname'])
@@ -195,7 +202,7 @@ if (isset($_SESSION['app1'])) {
 <div id="mainBox" <?php echo $disp_mainBox ?>>
     <div id="dialogDiv"></div>
     <div class="body_top">
-        <a href="http://www.open-emr.org" title="OpenEMR <?php echo xla("Website"); ?>" target="_blank"><img class="logo" alt="openEMR small logo" style="float: left; margin:3px 4px 0px 10px;width:20px;z-index:10000;" border="0" src="<?php echo $GLOBALS['images_static_relative']; ?>/menu-logo.png"></a>
+        <a href="http://www.open-emr.org" title="OpenEMR <?php echo xla("Website"); ?>" target="_blank"><img class="logo" alt="openEMR small logo"  border="0" src="<?php echo $GLOBALS['images_static_relative']; ?>/menu-logo.png"></a>
         <span id="menu logo" data-bind="template: {name: 'menu-template', data: application_data} "></span>
         <span id="userData" data-bind="template: {name: 'user-data-template', data:application_data} "></span>
     </div>
